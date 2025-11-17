@@ -1,11 +1,11 @@
-
 from datetime import datetime, timedelta
-import statistics
 import streamlit as st
 
 class CyclePredictor:
-    def __init__(self, period_start_dates):
-        self.period_dates = sorted(period_start_dates)
+    def __init__(self, period_ranges):
+        # Use only the start dates for cycle calculation
+        self.period_ranges = sorted(period_ranges)
+        self.period_dates = [start for start, end in self.period_ranges]
         self.cycle_lengths = self._calculate_cycle_lengths()
 
     def _calculate_cycle_lengths(self):
@@ -63,16 +63,21 @@ class CyclePredictor:
 # Streamlit app
 st.title("Cycle Predictor")
 
-st.write("Select at least two recent period start dates:")
+st.write("Log your recent period start and end dates below:")
 
-period_logs = []
+period_ranges = []
+
 for i in range(1, 6):
-    date_input = st.date_input(f"Period Start #{i}", key=f"date_{i}")
-    if date_input:
-        period_logs.append(datetime.combine(date_input, datetime.min.time()))
+    st.markdown(f"### Period #{i}")
+    start = st.date_input(f"Start Date {i}", key=f"start_{i}")
+    end = st.date_input(f"End Date {i}", key=f"end_{i}")
+    if start and end and start <= end:
+        start_dt = datetime.combine(start, datetime.min.time())
+        end_dt = datetime.combine(end, datetime.min.time())
+        period_ranges.append((start_dt, end_dt))
 
-if len(period_logs) >= 2:
-    predictor = CyclePredictor(period_logs)
+if len(period_ranges) >= 2:
+    predictor = CyclePredictor(period_ranges)
     prediction = predictor.predict_next_period()
     today = datetime.today()
     phase = predictor.get_current_phase(today)
@@ -86,4 +91,4 @@ if len(period_logs) >= 2:
     st.subheader("Current Phase")
     st.write(f"**Today:** {today.strftime('%Y-%m-%d')} — {phase}")
 else:
-    st.warning("Please enter at least two period start dates to generate predictions.")
+    st.warning("Please enter at least two period start and end date pairs to generate predictions.")
