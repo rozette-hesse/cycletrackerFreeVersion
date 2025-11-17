@@ -3,7 +3,6 @@ import streamlit as st
 
 class CyclePredictor:
     def __init__(self, period_ranges):
-        # Sort ranges by start date
         self.period_ranges = sorted(period_ranges, key=lambda x: x[0])
         self.period_dates = [start for start, end in self.period_ranges]
         self.cycle_lengths = self._calculate_cycle_lengths()
@@ -15,16 +14,13 @@ class CyclePredictor:
         ] if len(self.period_dates) > 1 else []
 
     def predict_next_period(self):
-        if len(self.period_dates) < 2:
+        if len(self.cycle_lengths) < 1:
             return {
                 "error": "Not enough data. Please log at least 2 cycles."
             }
 
-        last_period_start = self.period_dates[-1]
-        prev_period_start = self.period_dates[-2]
-        last_cycle_length = (last_period_start - prev_period_start).days
-
-        predicted_start = last_period_start + timedelta(days=last_cycle_length)
+        avg_cycle_length = sum(self.cycle_lengths) / len(self.cycle_lengths)
+        predicted_start = self.period_dates[-1] + timedelta(days=round(avg_cycle_length))
 
         prediction_range = [
             (predicted_start - timedelta(days=2)).strftime("%Y-%m-%d"),
@@ -35,7 +31,7 @@ class CyclePredictor:
             "predicted_start_date": predicted_start.strftime("%Y-%m-%d"),
             "range": prediction_range,
             "confidence": "Moderate",
-            "based_on": "last known cycle length"
+            "based_on": f"average cycle length of {round(avg_cycle_length)} days"
         }
 
     def get_current_phase(self, current_date=None):
