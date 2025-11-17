@@ -3,8 +3,8 @@ import streamlit as st
 
 class CyclePredictor:
     def __init__(self, period_ranges):
-        # Use only the start dates for cycle calculation
-        self.period_ranges = sorted(period_ranges)
+        # Sort ranges by start date
+        self.period_ranges = sorted(period_ranges, key=lambda x: x[0])
         self.period_dates = [start for start, end in self.period_ranges]
         self.cycle_lengths = self._calculate_cycle_lengths()
 
@@ -71,9 +71,9 @@ for i in range(1, 6):
     st.markdown(f"### Period #{i}")
     start = st.date_input(f"Start Date {i}", key=f"start_{i}")
     end = st.date_input(f"End Date {i}", key=f"end_{i}")
-    if start and end and start <= end:
-        start_dt = datetime.combine(start, datetime.min.time())
-        end_dt = datetime.combine(end, datetime.min.time())
+    if start and end:
+        start_dt = datetime.combine(min(start, end), datetime.min.time())
+        end_dt = datetime.combine(max(start, end), datetime.min.time())
         period_ranges.append((start_dt, end_dt))
 
 if len(period_ranges) >= 2:
