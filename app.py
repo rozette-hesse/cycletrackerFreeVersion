@@ -61,6 +61,26 @@ class CyclePredictor:
         else:
             return f"Cycle Day {days_since_last_period + 1} — Luteal Phase"
 
+    def get_ovulation_and_fertility_window(self):
+        if len(self.period_start_dates) < 2:
+            return {"error": "Log at least 2 periods to calculate ovulation."}
+
+        last_period_start = self.period_start_dates[-1]
+        prev_period_start = self.period_start_dates[-2]
+        last_cycle_length = (last_period_start - prev_period_start).days
+
+        ovulation_day = last_period_start + timedelta(days=last_cycle_length - 14)
+        fertile_start = ovulation_day - timedelta(days=5)
+        fertile_end = ovulation_day + timedelta(days=1)  # Include day after ovulation
+
+        return {
+            "ovulation_day": ovulation_day.strftime("%Y-%m-%d"),
+            "fertile_window": [
+                fertile_start.strftime("%Y-%m-%d"),
+                fertile_end.strftime("%Y-%m-%d")
+            ]
+        }
+
 # --- Streamlit App ---
 st.title("Menstrual Cycle Tracker — Free Version")
 
@@ -75,20 +95,5 @@ for i in range(num_periods):
         if start_date and end_date and start_date <= end_date:
             period_ranges.append((datetime.combine(start_date, datetime.min.time()), datetime.combine(end_date, datetime.min.time())))
 
-if st.button("Predict Next Period"):
+if st.button("Predict Next Period & Ovulation"):
     if len(period_ranges) < 2:
-        st.warning("Please log at least 2 periods.")
-    else:
-        predictor = CyclePredictor(period_ranges)
-        prediction = predictor.predict_next_period()
-
-        if "error" in prediction:
-            st.error(prediction["error"])
-        else:
-            st.success(f"Predicted Start Date: {prediction['predicted_start_date']}")
-            st.markdown(f"**Prediction Range:** {prediction['range'][0]} to {prediction['range'][1]}")
-            st.caption(f"Confidence: {prediction['confidence']} — Based on average of {len(predictor.cycle_lengths)} cycle(s)")
-
-        # Show phase for today
-        phase_today = predictor.get_current_phase()
-        st.markdown(f"### Today's Phase: {phase_today}")
